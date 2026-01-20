@@ -1,0 +1,23 @@
+﻿U slučaju da broj vašeg indeksa daje ostatak 2 kada se celobrojno podeli sa 3, implementirajte Boruvkin algoritam.
+ 
+
+Algoritme testirati nad neusmerenim grafovima čiji potezi imaju isključivo pozitivne težine, i gde ne postoje ciklusi dužine 0 (nema veza gde 
+je isti čvor na obe strane potega). 
+
+Testirati izvršenje nad sledeća dva slučaja generisanja grafa: 
+
+Slučaj 1: 
+
+Generisati N čvorova 
+Spojiti jedan slučajno odabrani čvor sa svim ostalim čvorovima u grafu  
+Generisati još k potega koji povezuju po 2 slučajno izabrana čvora (dva čvora ne smeju biti povezana sa više od jednog potega) 
+Slučaj 2: 
+
+Generisati N čvorova 
+Spojiti čvorove u daisy chain 
+Generisati još k potega koji povezuju po 2 slučajno izabrana čvora (dva čvora ne smeju biti povezana sa više od jednog potega) 
+Testirati izvršenje algoritma u funkciji k i N, gde je: 
+
+N = 100, 1000, 10k, 100k 
+
+k = 2*N, 5*N, 10*N, 20*N, 33*N, 50*N 
