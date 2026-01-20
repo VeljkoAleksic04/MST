@@ -8,21 +8,49 @@ namespace BoruvkinAlgorithm
     internal class Cvor
     {
         public int Vrednost { get; set; }
-        public List<KeyValuePair<Cvor, int>> Susedi { get; private set; }
-        public Cvor()
+        public List<KeyValuePair<Cvor, uint>> Susedi { get; private set; }
+
+        public int Rang { get; set; }
+        public Cvor Roditelj { get; set; }
+        public Cvor(int vrednost)
         {
-            Susedi = new List<KeyValuePair<Cvor, int>>();
+            Vrednost = vrednost;
+            Susedi = new List<KeyValuePair<Cvor, uint>>();
+            Roditelj = this;
+            Rang = 0;
         }
-        public void DodajSuseda(Cvor sused, int tezina)
+        public void DodajSuseda(Cvor sused, uint tezina)
         {
             if (this.Vrednost == sused.Vrednost)
                 throw new ArgumentException("Cvor ne moze sam sebi biti sused...");
 
-            if (Susedi.Contains(new KeyValuePair<Cvor, int>(sused, tezina)))
-                throw new ArgumentException("Ovaj cvor vec ima ovog suseda...");
+            Susedi.Add(new KeyValuePair<Cvor, uint>(sused, tezina));
+            sused.Susedi.Add(new KeyValuePair<Cvor, uint>(this, tezina));
+        }
+        public static Cvor PronadjiKorenGrupe(Cvor c)
+        {
+            if (c.Roditelj == c)
+                return c;
 
-            Susedi.Add(new KeyValuePair<Cvor, int>(sused, tezina));
-            sused.DodajSuseda(this, tezina);
+            return c.Roditelj = PronadjiKorenGrupe(c.Roditelj);
+        }
+        public static void SpojiGrupe(Cvor c1, Cvor c2)
+        {
+            Cvor koren1 = PronadjiKorenGrupe(c1);
+            Cvor koren2 = PronadjiKorenGrupe(c2);
+
+            if (koren1 != koren2)
+            {
+                if (koren1.Rang < koren2.Rang)
+                    koren1.Roditelj = koren2;
+                else if (koren1.Rang > koren2.Rang)
+                    koren2.Roditelj = koren1;
+                else
+                {
+                    koren2.Roditelj = koren1;
+                    koren1.Rang++;
+                }
+            }
         }
     }
 }
