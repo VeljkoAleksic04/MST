@@ -25,57 +25,73 @@ namespace BoruvkinAlgorithm
             }
         }
 
-        public List<Grana> PronadjiMST(List<Cvor> sviCvorovi)
+        public List<Grana> PronadjiMST(Graf graf)
         {
             List<Grana> mstGrane = new List<Grana>();
-            int brojOstrva = sviCvorovi.Count;
 
-            while (brojOstrva > 1)
+            try
             {
-                var najjeftinijaZaOstrvo = new Dictionary<Cvor, Grana>();
+                if (graf.ListaGrana == null || graf.ListaCvorova == null)
+                    throw new NullReferenceException("Lista grana ili lista cvorova je null.\n");
 
-                foreach (var cvor in sviCvorovi)
+                int brojOstrva = graf.ListaCvorova.Count;
+
+                while (brojOstrva > 1)
                 {
-                    Cvor korenU = PronadjiRoditelja(cvor);
+                    var najjeftinijaZaOstrvo = new Dictionary<Cvor, Grana>();
 
-                    foreach (var susedstvo in cvor.Susedi)
+                    foreach (var cvor in graf.ListaCvorova)
                     {
-                        Cvor sused = susedstvo.Key;
-                        Cvor korenV = PronadjiRoditelja(sused);
+                        Cvor korenU = PronadjiRoditelja(cvor);
 
-                        if (korenU != korenV)
+                        foreach (var susedstvo in cvor.Susedi)
                         {
-                            uint tezina = susedstvo.Value;
+                            Cvor sused = susedstvo.Key;
+                            Cvor korenV = PronadjiRoditelja(sused);
 
-                            if (!najjeftinijaZaOstrvo.ContainsKey(korenU) || tezina < najjeftinijaZaOstrvo[korenU].Tezina)
+                            if (korenU != korenV)
                             {
-                                najjeftinijaZaOstrvo[korenU] = new Grana(cvor, sused, tezina);
+                                uint tezina = susedstvo.Value;
+
+                                if (!najjeftinijaZaOstrvo.ContainsKey(korenU) || tezina < najjeftinijaZaOstrvo[korenU].Tezina)
+                                {
+                                    najjeftinijaZaOstrvo[korenU] = new Grana(cvor, sused, tezina);
+                                }
                             }
                         }
                     }
-                }
 
-                // 2. Spoji ostrva pomoću pronađenih najjeftinijih grana
-                bool biloSpajanja = false;
-                foreach (var grana in najjeftinijaZaOstrvo.Values)
-                {
-                    Cvor korenA = PronadjiRoditelja(grana.Iz);
-                    Cvor korenB = PronadjiRoditelja(grana.Ka);
-
-                    if (korenA != korenB)
+                    // 2. Spoji ostrva pomoću pronađenih najjeftinijih grana
+                    bool biloSpajanja = false;
+                    foreach (var grana in najjeftinijaZaOstrvo.Values)
                     {
-                        mstGrane.Add(grana);
-                        UnijaOstrva(korenA, korenB);
-                        brojOstrva--;
-                        biloSpajanja = true;
+                        Cvor korenA = PronadjiRoditelja(grana.Iz);
+                        Cvor korenB = PronadjiRoditelja(grana.Ka);
+
+                        if (korenA != korenB)
+                        {
+                            mstGrane.Add(grana);
+                            UnijaOstrva(korenA, korenB);
+                            brojOstrva--;
+                            biloSpajanja = true;
+                        }
                     }
+
+                    // Ako u celom krugu nismo našli nijednu granu za spajanje, graf nije povezan
+                    if (!biloSpajanja) break;
                 }
 
-                // Ako u celom krugu nismo našli nijednu granu za spajanje, graf nije povezan
-                if (!biloSpajanja) break;
-            }
+                return mstGrane;
 
-            return mstGrane;
+            }
+            catch (NullReferenceException ex)
+            {
+                throw new(ex.Message);
+            }
+            catch(Exception ex)
+            {
+                throw new(ex.Message);
+            }
         }
     }
 }
