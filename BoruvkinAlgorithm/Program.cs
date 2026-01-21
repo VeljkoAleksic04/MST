@@ -1,4 +1,6 @@
-﻿using System.Diagnostics;
+﻿using System;
+using System.Diagnostics;
+using System.Collections.Generic;
 
 namespace BoruvkinAlgorithm
 {
@@ -6,138 +8,214 @@ namespace BoruvkinAlgorithm
     {
         Graf GenerisiPovezanNasumicniGraf(int n, int k)
         {
-            Graf graf = new(n, k*n);
+            int brojGrana = (n - 1) + (k * n);
+
+            int maxGrana = n * (n - 1) / 2;
+            if (brojGrana > maxGrana)
+            {
+                Console.WriteLine($"GREŠKA: Potrebno {brojGrana} grana, max={maxGrana} za n={n}");
+                return new Graf(0, 0);
+            }
+
+            Graf graf = new(n, brojGrana);
             Random rnd = new();
+
+            // HashSet za O(1) proveru duplikata
+            HashSet<(int, int)> postojeceGrane = new HashSet<(int, int)>();
+
             try
             {
-                //if (graf.ListaCvorova == null)
-                //    graf.ListaCvorova = [];
-                //if (graf.ListaGrana == null)
-                //    graf.ListaGrana = [];
-
-                // Dodavanje cvorova u listu cvorova u grafu
-                for(int i = 0; i < n; i++)
+                // 1. Dodaj N čvorova
+                for (int i = 0; i < n; i++)
                 {
-                    int vr = rnd.Next(-50, 50);
-                    int nadjen = graf.ListaCvorova.FindIndex(c => c.Vrednost == vr);
-                    if (nadjen == -1)
-                        graf.ListaCvorova.Add(new Cvor(vr));
-                    else i--;
+                    graf.ListaCvorova.Add(new Cvor(i)); // Koristi i kao vrednost
                 }
 
-                // povezivanje random cvora sa svim ostalim cvorovima u listi
-                int rndIndex = rnd.Next(0, graf.ListaCvorova.Count);
-                Cvor rndCvor = graf.ListaCvorova[rndIndex];
-                uint tezina = 0;
-                foreach (Cvor c in graf.ListaCvorova)
+                // 2. Zvezda: poveži jedan random čvor sa svim ostalim (n-1 grana)
+                int centarInd = rnd.Next(0, n);
+                Cvor centar = graf.ListaCvorova[centarInd];
+
+                for (int i = 0; i < n; i++)
                 {
-                    if (c.Vrednost == rndCvor.Vrednost)
+                    if (i == centarInd)
                         continue;
 
-                    tezina = (uint)rnd.Next(0, 20);
-                    rndCvor.DodajSuseda(c, tezina);
-                    // Ovde se dodaje 99 grana (ako je u listi 100 cvorova), pa moramo da ih dodamo u listu grana
-                    graf.ListaGrana.Add(new Grana(rndCvor, c, tezina));
+                    uint tezina = (uint)rnd.Next(1, 21);
+                    centar.DodajSuseda(graf.ListaCvorova[i], tezina);
+                    graf.ListaGrana.Add(new Grana(centar, graf.ListaCvorova[i], tezina));
+
+                    // Dodaj u HashSet (normalizovano - manji index uvek prvi)
+                    int min = Math.Min(centarInd, i);
+                    int max = Math.Max(centarInd, i);
+                    postojeceGrane.Add((min, max));
                 }
 
-                // Odredjujemo broj slobodnih mesta za grane
-                int cnt = graf.ListaGrana.Capacity - graf.ListaGrana.Count;
-                for(int i = 0; i < cnt; i++)
+                // 3. Dodaj k*n dodatnih grana - EFIKASNO
+                int potrebnoGrana = k * n;
+                int dodato = 0;
+
+                // Ako treba dosta grana, koristi reservoir sampling pristup
+                if (potrebnoGrana > maxGrana / 2)
                 {
-                    if (graf.ListaCvorova[graf.ListaCvorova.Capacity - 1].Susedi.Count == 99)
-                        break;
+                    // Generisi SVE moguće grane i izaberi random podskup
+                    List<(int, int)> sveGrane = new List<(int, int)>(maxGrana);
 
-                    tezina = (uint)rnd.Next(0, 20);
-
-                    int c1 = rnd.Next(0, graf.ListaCvorova.Capacity);
-                    int c2 = rnd.Next(0, graf.ListaCvorova.Capacity);
-
-                    // Uzimamo dva random cvora
-                    Cvor rndC1 = graf.ListaCvorova[c1];
-                    Cvor rndC2 = graf.ListaCvorova[c2];
-
-                    // Ispitujemo da li su mozda vec povezani
-                    KeyValuePair<Cvor, uint> povezani = rndC1.Susedi.Find(sused => sused.Key == rndC2);
-                    if(povezani.Key == null && c1 != c2)
+                    for (int i = 0; i < n; i++)
                     {
-                        graf.ListaCvorova[graf.ListaCvorova.FindIndex(c => c.Vrednost == rndC1.Vrednost)].DodajSuseda(rndC2, tezina);
-                        graf.ListaGrana.Add(new Grana(rndC1, rndC2, tezina));
-                    } 
-                    else
+                        for (int j = i + 1; j < n; j++)
+                        {
+                            if (!postojeceGrane.Contains((i, j)))
+                            {
+                                sveGrane.Add((i, j));
+                            }
+                        }
+                    }
+
+                    // Fisher-Yates shuffle (samo prvih potrebnoGrana elemenata)
+                    int granica = Math.Min(potrebnoGrana, sveGrane.Count);
+                    for (int i = 0; i < granica; i++)
                     {
-                        i--;
+                        int j = rnd.Next(i, sveGrane.Count);
+                        var temp = sveGrane[i];
+                        sveGrane[i] = sveGrane[j];
+                        sveGrane[j] = temp;
+
+                        var (c1Idx, c2Idx) = sveGrane[i];
+                        uint tezina = (uint)rnd.Next(1, 21);
+
+                        graf.ListaCvorova[c1Idx].DodajSuseda(graf.ListaCvorova[c2Idx], tezina);
+                        graf.ListaGrana.Add(new Grana(graf.ListaCvorova[c1Idx], graf.ListaCvorova[c2Idx], tezina));
+                        dodato++;
                     }
                 }
-                if(graf.ListaGrana.Capacity == graf.ListaGrana.Count)
-                    return graf;
                 else
                 {
-                    Console.WriteLine("Svi cvorovi u random grafu su povezani i nije moguce dalje povezivanje...\n");
-                    return new Graf(0, 0);
+                    // Za manji broj grana, random sampling sa HashSet proverom
+                    while (dodato < potrebnoGrana)
+                    {
+                        int c1 = rnd.Next(0, n);
+                        int c2 = rnd.Next(0, n);
+
+                        if (c1 == c2)
+                            continue;
+
+                        int min = Math.Min(c1, c2);
+                        int max = Math.Max(c1, c2);
+
+                        if (postojeceGrane.Add((min, max))) // O(1) provera i dodavanje
+                        {
+                            uint tezina = (uint)rnd.Next(1, 21);
+                            graf.ListaCvorova[c1].DodajSuseda(graf.ListaCvorova[c2], tezina);
+                            graf.ListaGrana.Add(new Grana(graf.ListaCvorova[c1], graf.ListaCvorova[c2], tezina));
+                            dodato++;
+
+                        }
+                    }
                 }
+
+                return graf;
             }
             catch (Exception ex)
             {
                 throw new Exception(ex.Message);
             }
         }
+
         Graf GenerisiDasyNasumicniGraf(int n, int k)
         {
-            Graf graf = new Graf(n, k*n);
+            int brojGrana = (n - 1) + (k * n);
+            Graf graf = new Graf(n, brojGrana);
+
+            int maxGrana = n * (n - 1) / 2;
+            if (brojGrana > maxGrana)
+            {
+                Console.WriteLine($"GREŠKA: Potrebno {brojGrana} grana, max={maxGrana} za n={n}");
+                return new Graf(0, 0);
+            }
+
             Random rnd = new();
+
+            HashSet<(int, int)> postojeceGrane = new HashSet<(int, int)>();
+
             try
             {
-                // Dodavanje cvorova u listu cvorova u grafu
+                // 1. Dodaj N čvorova
                 for (int i = 0; i < n; i++)
                 {
-                    int vr = rnd.Next(-50, 50);
-                    int nadjen = graf.ListaCvorova.FindIndex(c => c.Vrednost == vr);
-                    if (nadjen == -1)
-                        graf.ListaCvorova.Add(new Cvor(vr));
-                    else i--;
+                    graf.ListaCvorova.Add(new Cvor(i));
                 }
 
-                uint tezina = 0;
-                for(int i = 0; i < graf.ListaCvorova.Count - 1; i++)
+                // 2. Daisy chain: 0-1-2-3-...-n-1 (n-1 grana)
+                for (int i = 0; i < n - 1; i++)
                 {
-                    tezina = (uint)rnd.Next(0, 20);
+                    uint tezina = (uint)rnd.Next(1, 21);
                     graf.ListaCvorova[i].DodajSuseda(graf.ListaCvorova[i + 1], tezina);
                     graf.ListaGrana.Add(new Grana(graf.ListaCvorova[i], graf.ListaCvorova[i + 1], tezina));
+                    postojeceGrane.Add((i, i + 1));
                 }
-                int cnt = graf.ListaGrana.Capacity - graf.ListaGrana.Count;
-                for (int i = 0; i < cnt; i++)
+
+                // 3. Dodaj k*n dodatnih grana - EFIKASNO
+                int potrebnoGrana = k * n;
+                int dodato = 0;
+
+                if (potrebnoGrana > maxGrana / 2)
                 {
-                    if (graf.ListaCvorova[graf.ListaCvorova.Capacity - 1].Susedi.Count == 99)
-                        break;
+                    // Generisi SVE moguće grane i izaberi random podskup
+                    List<(int, int)> sveGrane = new List<(int, int)>(maxGrana);
 
-                    tezina = (uint)rnd.Next(0, 20);
-
-                    int c1 = rnd.Next(0, graf.ListaCvorova.Capacity);
-                    int c2 = rnd.Next(0, graf.ListaCvorova.Capacity);
-
-                    // Uzimamo dva random cvora
-                    Cvor rndC1 = graf.ListaCvorova[c1];
-                    Cvor rndC2 = graf.ListaCvorova[c2];
-
-                    // Ispitujemo da li su mozda vec povezani
-                    KeyValuePair<Cvor, uint> povezani = rndC1.Susedi.Find(sused => sused.Key == rndC2);
-                    if (povezani.Key == null && c1 != c2)
+                    for (int i = 0; i < n; i++)
                     {
-                        graf.ListaCvorova[graf.ListaCvorova.FindIndex(c => c.Vrednost == rndC1.Vrednost)].DodajSuseda(rndC2, tezina);
-                        graf.ListaGrana.Add(new Grana(rndC1, rndC2, tezina));
+                        for (int j = i + 1; j < n; j++)
+                        {
+                            if (!postojeceGrane.Contains((i, j)))
+                            {
+                                sveGrane.Add((i, j));
+                            }
+                        }
                     }
-                    else
+
+                    // Fisher-Yates shuffle (samo prvih potrebnoGrana elemenata)
+                    int granica = Math.Min(potrebnoGrana, sveGrane.Count);
+                    for (int i = 0; i < granica; i++)
                     {
-                        i--;
+                        int j = rnd.Next(i, sveGrane.Count);
+                        var temp = sveGrane[i];
+                        sveGrane[i] = sveGrane[j];
+                        sveGrane[j] = temp;
+
+                        var (c1Idx, c2Idx) = sveGrane[i];
+                        uint tezina = (uint)rnd.Next(1, 21);
+
+                        graf.ListaCvorova[c1Idx].DodajSuseda(graf.ListaCvorova[c2Idx], tezina);
+                        graf.ListaGrana.Add(new Grana(graf.ListaCvorova[c1Idx], graf.ListaCvorova[c2Idx], tezina));
+                        dodato++;
                     }
                 }
-                if (graf.ListaGrana.Capacity == graf.ListaGrana.Count)
-                    return graf;
                 else
                 {
-                    Console.WriteLine("Svi cvorovi u Dasy grafu su povezani i nije moguce dalje povezivanje...\n");
-                    return new Graf(0, 0);
+                    // Za manji broj grana, random sampling
+                    while (dodato < potrebnoGrana)
+                    {
+                        int c1 = rnd.Next(0, n);
+                        int c2 = rnd.Next(0, n);
+
+                        if (c1 == c2)
+                            continue;
+
+                        int min = Math.Min(c1, c2);
+                        int max = Math.Max(c1, c2);
+
+                        if (postojeceGrane.Add((min, max)))
+                        {
+                            uint tezina = (uint)rnd.Next(1, 21);
+                            graf.ListaCvorova[c1].DodajSuseda(graf.ListaCvorova[c2], tezina);
+                            graf.ListaGrana.Add(new Grana(graf.ListaCvorova[c1], graf.ListaCvorova[c2], tezina));
+                            dodato++;
+                        }
+                    }
                 }
+
+                return graf;
             }
             catch (Exception ex)
             {
@@ -150,30 +228,52 @@ namespace BoruvkinAlgorithm
             int[] N = { 100, 1000, 10000, 100000 };
             int[] K = { 2, 5, 10, 20, 33, 50 };
 
+            Console.WriteLine("===== BORUVKA - BENCHMARK =====\n");
+
             for (int i = 0; i < N.Length; i++)
             {
                 int n = N[i];
-                for(int j = 0; j < K.Length; j++)
+                for (int j = 0; j < K.Length; j++)
                 {
                     int k = K[j];
-                    int brPotega = (int)(n * k);
-
-                    // 1. Generiši graf
+                    int ukupnoGrana = (n - 1) + (k * n);
+                    Stopwatch swGen = Stopwatch.StartNew();
                     Graf graf = GenerisiPovezanNasumicniGraf(n, k);
+                    swGen.Stop();
+
+                    swGen.Restart();
                     Graf dasyGraf = GenerisiDasyNasumicniGraf(n, k);
+                    swGen.Stop();
 
-                    // 2. Pokreni i izmeri
-                    Boruvka algoritam = new Boruvka();
-                    Stopwatch sw = Stopwatch.StartNew();
-                    List<Grana> mstRandom = algoritam.PronadjiMST(graf);
-                    List<Grana> mstDasy = algoritam.PronadjiMST(dasyGraf);
-                    sw.Stop();
+                    Console.WriteLine($"\n========== N={n}, k={k}, Star broj grana: {graf.ListaGrana.Count} | Dasy broj grana: {dasyGraf.ListaGrana.Count} ==========");
 
-                    if(dasyGraf.ListaGrana.Count == graf.ListaGrana.Capacity || graf.ListaGrana.Count == graf.ListaGrana.Capacity)
-                        Console.WriteLine($"N={n}, K={k} | Vreme: {sw.ElapsedMilliseconds} ms");
+                    // Generisanje
+
+
+                    if (graf.ListaCvorova.Count == 0 || dasyGraf.ListaCvorova.Count == 0)
+                    {
+                        Console.WriteLine("!!! GREŠKA !!!\n");
+                        continue;
+                    }
+
+                    // Boruvka algoritam
+                    Boruvka alg1 = new Boruvka();
+                    Stopwatch sw1 = Stopwatch.StartNew();
+                    List<Grana> mstRandom = alg1.PronadjiMST(graf);
+                    sw1.Stop();
+
+                    Boruvka alg2 = new Boruvka();
+                    Stopwatch sw2 = Stopwatch.StartNew();
+                    List<Grana> mstDasy = alg2.PronadjiMST(dasyGraf);
+                    sw2.Stop();
+
+                    Console.WriteLine($"\nBORUVKA:");
+                    Console.WriteLine($"Random: {sw1.ElapsedMilliseconds,8} ms | MST grana: {mstRandom.Count}");
+                    Console.WriteLine($"Daisy:  {sw2.ElapsedMilliseconds,8} ms | MST grana: {mstDasy.Count}");
                 }
             }
         }
+
         static void Main()
         {
             Program program = new Program();

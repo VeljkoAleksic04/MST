@@ -29,69 +29,67 @@ namespace BoruvkinAlgorithm
         {
             List<Grana> mstGrane = new List<Grana>();
 
-            try
+            if (graf.ListaGrana == null || graf.ListaCvorova == null)
+                throw new NullReferenceException("Lista grana ili lista cvorova je null.\n");
+
+            int brojOstrva = graf.ListaCvorova.Count;
+
+            while (brojOstrva > 1)
             {
-                if (graf.ListaGrana == null || graf.ListaCvorova == null)
-                    throw new NullReferenceException("Lista grana ili lista cvorova je null.\n");
+                var najjeftinijaZaOstrvo = new Dictionary<Cvor, Grana>();
 
-                int brojOstrva = graf.ListaCvorova.Count;
-
-                while (brojOstrva > 1)
+                // EFIKASNO: Iteracija kroz graf.ListaGrana (svaka grana samo jednom)
+                foreach (var grana in graf.ListaGrana)
                 {
-                    var najjeftinijaZaOstrvo = new Dictionary<Cvor, Grana>();
+                    Cvor korenU = PronadjiRoditelja(grana.Iz);
+                    Cvor korenV = PronadjiRoditelja(grana.Ka);
 
-                    foreach (var cvor in graf.ListaCvorova)
+                    if (korenU != korenV)
                     {
-                        Cvor korenU = PronadjiRoditelja(cvor);
-
-                        foreach (var susedstvo in cvor.Susedi)
+                        // Proveri da li je ova grana najjeftinija za ostrvo U
+                        if (!najjeftinijaZaOstrvo.ContainsKey(korenU) ||
+                            grana.Tezina < najjeftinijaZaOstrvo[korenU].Tezina)
                         {
-                            Cvor sused = susedstvo.Key;
-                            Cvor korenV = PronadjiRoditelja(sused);
+                            najjeftinijaZaOstrvo[korenU] = grana;
+                        }
 
-                            if (korenU != korenV)
-                            {
-                                uint tezina = susedstvo.Value;
-
-                                if (!najjeftinijaZaOstrvo.ContainsKey(korenU) || tezina < najjeftinijaZaOstrvo[korenU].Tezina)
-                                {
-                                    najjeftinijaZaOstrvo[korenU] = new Grana(cvor, sused, tezina);
-                                }
-                            }
+                        // Proveri da li je ova grana najjeftinija za ostrvo V
+                        if (!najjeftinijaZaOstrvo.ContainsKey(korenV) ||
+                            grana.Tezina < najjeftinijaZaOstrvo[korenV].Tezina)
+                        {
+                            najjeftinijaZaOstrvo[korenV] = grana;
                         }
                     }
-
-                    // 2. Spoji ostrva pomoću pronađenih najjeftinijih grana
-                    bool biloSpajanja = false;
-                    foreach (var grana in najjeftinijaZaOstrvo.Values)
-                    {
-                        Cvor korenA = PronadjiRoditelja(grana.Iz);
-                        Cvor korenB = PronadjiRoditelja(grana.Ka);
-
-                        if (korenA != korenB)
-                        {
-                            mstGrane.Add(grana);
-                            UnijaOstrva(korenA, korenB);
-                            brojOstrva--;
-                            biloSpajanja = true;
-                        }
-                    }
-
-                    // Ako u celom krugu nismo našli nijednu granu za spajanje, graf nije povezan
-                    if (!biloSpajanja) break;
                 }
 
-                return mstGrane;
+                // Spoji ostrva pomoću pronađenih najjeftinijih grana
+                bool biloSpajanja = false;
+                HashSet<Grana> dodateGrane = new HashSet<Grana>(); // Spreči duplikate
 
+                foreach (var grana in najjeftinijaZaOstrvo.Values)
+                {
+                    // Proveri da li smo već dodali ovu granu
+                    if (dodateGrane.Contains(grana))
+                        continue;
+
+                    Cvor korenA = PronadjiRoditelja(grana.Iz);
+                    Cvor korenB = PronadjiRoditelja(grana.Ka);
+
+                    if (korenA != korenB)
+                    {
+                        mstGrane.Add(grana);
+                        dodateGrane.Add(grana);
+                        UnijaOstrva(korenA, korenB);
+                        brojOstrva--;
+                        biloSpajanja = true;
+                    }
+                }
+
+                if (!biloSpajanja)
+                    break;
             }
-            catch (NullReferenceException ex)
-            {
-                throw new(ex.Message);
-            }
-            catch(Exception ex)
-            {
-                throw new(ex.Message);
-            }
+
+            return mstGrane;
         }
     }
 }
