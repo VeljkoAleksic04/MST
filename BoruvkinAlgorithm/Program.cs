@@ -20,18 +20,15 @@ namespace BoruvkinAlgorithm
             Graf graf = new(n, brojGrana);
             Random rnd = new();
 
-            // HashSet za O(1) proveru duplikata
             HashSet<(int, int)> postojeceGrane = new HashSet<(int, int)>();
 
             try
             {
-                // 1. Dodaj N čvorova
                 for (int i = 0; i < n; i++)
                 {
-                    graf.ListaCvorova.Add(new Cvor(i)); // Koristi i kao vrednost
+                    graf.ListaCvorova.Add(new Cvor(i));
                 }
 
-                // 2. Zvezda: poveži jedan random čvor sa svim ostalim (n-1 grana)
                 int centarInd = rnd.Next(0, n);
                 Cvor centar = graf.ListaCvorova[centarInd];
 
@@ -44,20 +41,16 @@ namespace BoruvkinAlgorithm
                     centar.DodajSuseda(graf.ListaCvorova[i], tezina);
                     graf.ListaGrana.Add(new Grana(centar, graf.ListaCvorova[i], tezina));
 
-                    // Dodaj u HashSet (normalizovano - manji index uvek prvi)
                     int min = Math.Min(centarInd, i);
                     int max = Math.Max(centarInd, i);
                     postojeceGrane.Add((min, max));
                 }
 
-                // 3. Dodaj k*n dodatnih grana - EFIKASNO
                 int potrebnoGrana = k * n;
                 int dodato = 0;
 
-                // Ako treba dosta grana, koristi reservoir sampling pristup
                 if (potrebnoGrana > maxGrana / 2)
                 {
-                    // Generisi SVE moguće grane i izaberi random podskup
                     List<(int, int)> sveGrane = new List<(int, int)>(maxGrana);
 
                     for (int i = 0; i < n; i++)
@@ -71,7 +64,6 @@ namespace BoruvkinAlgorithm
                         }
                     }
 
-                    // Fisher-Yates shuffle (samo prvih potrebnoGrana elemenata)
                     int granica = Math.Min(potrebnoGrana, sveGrane.Count);
                     for (int i = 0; i < granica; i++)
                     {
@@ -90,7 +82,6 @@ namespace BoruvkinAlgorithm
                 }
                 else
                 {
-                    // Za manji broj grana, random sampling sa HashSet proverom
                     while (dodato < potrebnoGrana)
                     {
                         int c1 = rnd.Next(0, n);
@@ -102,7 +93,7 @@ namespace BoruvkinAlgorithm
                         int min = Math.Min(c1, c2);
                         int max = Math.Max(c1, c2);
 
-                        if (postojeceGrane.Add((min, max))) // O(1) provera i dodavanje
+                        if (postojeceGrane.Add((min, max)))
                         {
                             uint tezina = (uint)rnd.Next(1, 21);
                             graf.ListaCvorova[c1].DodajSuseda(graf.ListaCvorova[c2], tezina);
@@ -139,13 +130,11 @@ namespace BoruvkinAlgorithm
 
             try
             {
-                // 1. Dodaj N čvorova
                 for (int i = 0; i < n; i++)
                 {
                     graf.ListaCvorova.Add(new Cvor(i));
                 }
 
-                // 2. Daisy chain: 0-1-2-3-...-n-1 (n-1 grana)
                 for (int i = 0; i < n - 1; i++)
                 {
                     uint tezina = (uint)rnd.Next(1, 21);
@@ -154,13 +143,11 @@ namespace BoruvkinAlgorithm
                     postojeceGrane.Add((i, i + 1));
                 }
 
-                // 3. Dodaj k*n dodatnih grana - EFIKASNO
                 int potrebnoGrana = k * n;
                 int dodato = 0;
 
                 if (potrebnoGrana > maxGrana / 2)
                 {
-                    // Generisi SVE moguće grane i izaberi random podskup
                     List<(int, int)> sveGrane = new List<(int, int)>(maxGrana);
 
                     for (int i = 0; i < n; i++)
@@ -174,7 +161,6 @@ namespace BoruvkinAlgorithm
                         }
                     }
 
-                    // Fisher-Yates shuffle (samo prvih potrebnoGrana elemenata)
                     int granica = Math.Min(potrebnoGrana, sveGrane.Count);
                     for (int i = 0; i < granica; i++)
                     {
@@ -247,16 +233,13 @@ namespace BoruvkinAlgorithm
 
                     Console.WriteLine($"\n========== N={n}, k={k}, Star broj grana: {graf.ListaGrana.Count} | Dasy broj grana: {dasyGraf.ListaGrana.Count} ==========");
 
-                    // Generisanje
-
-
+                    
                     if (graf.ListaCvorova.Count == 0 || dasyGraf.ListaCvorova.Count == 0)
                     {
                         Console.WriteLine("!!! GREŠKA !!!\n");
                         continue;
                     }
 
-                    // Boruvka algoritam
                     Boruvka alg1 = new Boruvka();
                     Stopwatch sw1 = Stopwatch.StartNew();
                     List<Grana> mstRandom = alg1.PronadjiMST(graf);
