@@ -169,11 +169,11 @@ namespace BoruvkinAlgorithm
                         sveGrane[i] = sveGrane[j];
                         sveGrane[j] = temp;
 
-                        var (c1Idx, c2Idx) = sveGrane[i];
+                        var (c1Ind, c2Ind) = sveGrane[i];
                         uint tezina = (uint)rnd.Next(1, 21);
 
-                        graf.ListaCvorova[c1Idx].DodajSuseda(graf.ListaCvorova[c2Idx], tezina);
-                        graf.ListaGrana.Add(new Grana(graf.ListaCvorova[c1Idx], graf.ListaCvorova[c2Idx], tezina));
+                        graf.ListaCvorova[c1Ind].DodajSuseda(graf.ListaCvorova[c2Ind], tezina);
+                        graf.ListaGrana.Add(new Grana(graf.ListaCvorova[c1Ind], graf.ListaCvorova[c2Ind], tezina));
                         dodato++;
                     }
                 }
@@ -231,7 +231,7 @@ namespace BoruvkinAlgorithm
                     Graf dasyGraf = GenerisiDasyNasumicniGraf(n, k);
                     swGen.Stop();
 
-                    Console.WriteLine($"\n========== N={n}, k={k}, Star broj grana: {graf.ListaGrana.Count} | Dasy broj grana: {dasyGraf.ListaGrana.Count} ==========");
+                    Console.WriteLine($"\n========== N={n}, k={k} ==========");
 
                     
                     if (graf.ListaCvorova.Count == 0 || dasyGraf.ListaCvorova.Count == 0)

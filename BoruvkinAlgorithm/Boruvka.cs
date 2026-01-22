@@ -38,37 +38,32 @@ namespace BoruvkinAlgorithm
             {
                 var najjeftinijaZaOstrvo = new Dictionary<Cvor, Grana>();
 
-                // EFIKASNO: Iteracija kroz graf.ListaGrana (svaka grana samo jednom)
                 foreach (var grana in graf.ListaGrana)
                 {
-                    Cvor korenU = PronadjiRoditelja(grana.Iz);
-                    Cvor korenV = PronadjiRoditelja(grana.Ka);
+                    Cvor korenLevo = PronadjiRoditelja(grana.Iz);
+                    Cvor korenDesno = PronadjiRoditelja(grana.Ka);
 
-                    if (korenU != korenV)
+                    if (korenLevo != korenDesno)
                     {
-                        // Proveri da li je ova grana najjeftinija za ostrvo U
-                        if (!najjeftinijaZaOstrvo.ContainsKey(korenU) ||
-                            grana.Tezina < najjeftinijaZaOstrvo[korenU].Tezina)
+                        if (!najjeftinijaZaOstrvo.ContainsKey(korenLevo) ||
+                            grana.Tezina < najjeftinijaZaOstrvo[korenLevo].Tezina)
                         {
-                            najjeftinijaZaOstrvo[korenU] = grana;
+                            najjeftinijaZaOstrvo[korenLevo] = grana;
                         }
 
-                        // Proveri da li je ova grana najjeftinija za ostrvo V
-                        if (!najjeftinijaZaOstrvo.ContainsKey(korenV) ||
-                            grana.Tezina < najjeftinijaZaOstrvo[korenV].Tezina)
+                        if (!najjeftinijaZaOstrvo.ContainsKey(korenDesno) ||
+                            grana.Tezina < najjeftinijaZaOstrvo[korenDesno].Tezina)
                         {
-                            najjeftinijaZaOstrvo[korenV] = grana;
+                            najjeftinijaZaOstrvo[korenDesno] = grana;
                         }
                     }
                 }
 
-                // Spoji ostrva pomoću pronađenih najjeftinijih grana
                 bool biloSpajanja = false;
-                HashSet<Grana> dodateGrane = new HashSet<Grana>(); // Spreči duplikate
+                HashSet<Grana> dodateGrane = new HashSet<Grana>();
 
                 foreach (var grana in najjeftinijaZaOstrvo.Values)
                 {
-                    // Proveri da li smo već dodali ovu granu
                     if (dodateGrane.Contains(grana))
                         continue;
 

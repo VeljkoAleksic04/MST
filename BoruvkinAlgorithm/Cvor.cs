@@ -11,7 +11,6 @@ namespace BoruvkinAlgorithm
         public List<KeyValuePair<Cvor, uint>> Susedi { get; private set; }
 
         public int Rang { get; set; }
-        // Roditelj grupe
         public Cvor Roditelj { get; set; }
 
         public Cvor(int vrednost)
