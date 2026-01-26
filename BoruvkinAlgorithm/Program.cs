@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
 using System.Collections.Generic;
+using System.Runtime.Intrinsics.Arm;
 
 namespace BoruvkinAlgorithm
 {
@@ -8,7 +9,7 @@ namespace BoruvkinAlgorithm
     {
         Graf GenerisiPovezanNasumicniGraf(int n, int k)
         {
-            int brojGrana = (n - 1) + (k * n);
+            int brojGrana = k * n;
 
             int maxGrana = n * (n - 1) / 2;
             if (brojGrana > maxGrana)
@@ -29,79 +30,25 @@ namespace BoruvkinAlgorithm
                     graf.ListaCvorova.Add(new Cvor(i));
                 }
 
-                int centarInd = rnd.Next(0, n);
-                Cvor centar = graf.ListaCvorova[centarInd];
+                //int centarInd = rnd.Next(0, n);
+                //Cvor centar = graf.ListaCvorova[centarInd];
 
-                for (int i = 0; i < n; i++)
+                int cnt = 0;
+
+                while (cnt < brojGrana)
                 {
-                    if (i == centarInd)
+                    Cvor c1 = graf.ListaCvorova[rnd.Next(0, n)];
+                    Cvor c2 = graf.ListaCvorova[rnd.Next(0, n)];
+
+                    if (c1.Vrednost == c2.Vrednost)
                         continue;
 
                     uint tezina = (uint)rnd.Next(1, 21);
-                    centar.DodajSuseda(graf.ListaCvorova[i], tezina);
-                    graf.ListaGrana.Add(new Grana(centar, graf.ListaCvorova[i], tezina));
+                    c1.DodajSuseda(c2, tezina);
+                    c2.DodajSuseda(c1, tezina);
+                    graf.ListaGrana.Add(new Grana(c1, c2, tezina));
 
-                    int min = Math.Min(centarInd, i);
-                    int max = Math.Max(centarInd, i);
-                    postojeceGrane.Add((min, max));
-                }
-
-                int potrebnoGrana = k * n;
-                int dodato = 0;
-
-                if (potrebnoGrana > maxGrana / 2)
-                {
-                    List<(int, int)> sveGrane = new List<(int, int)>(maxGrana);
-
-                    for (int i = 0; i < n; i++)
-                    {
-                        for (int j = i + 1; j < n; j++)
-                        {
-                            if (!postojeceGrane.Contains((i, j)))
-                            {
-                                sveGrane.Add((i, j));
-                            }
-                        }
-                    }
-
-                    int granica = Math.Min(potrebnoGrana, sveGrane.Count);
-                    for (int i = 0; i < granica; i++)
-                    {
-                        int j = rnd.Next(i, sveGrane.Count);
-                        var temp = sveGrane[i];
-                        sveGrane[i] = sveGrane[j];
-                        sveGrane[j] = temp;
-
-                        var (c1Idx, c2Idx) = sveGrane[i];
-                        uint tezina = (uint)rnd.Next(1, 21);
-
-                        graf.ListaCvorova[c1Idx].DodajSuseda(graf.ListaCvorova[c2Idx], tezina);
-                        graf.ListaGrana.Add(new Grana(graf.ListaCvorova[c1Idx], graf.ListaCvorova[c2Idx], tezina));
-                        dodato++;
-                    }
-                }
-                else
-                {
-                    while (dodato < potrebnoGrana)
-                    {
-                        int c1 = rnd.Next(0, n);
-                        int c2 = rnd.Next(0, n);
-
-                        if (c1 == c2)
-                            continue;
-
-                        int min = Math.Min(c1, c2);
-                        int max = Math.Max(c1, c2);
-
-                        if (postojeceGrane.Add((min, max)))
-                        {
-                            uint tezina = (uint)rnd.Next(1, 21);
-                            graf.ListaCvorova[c1].DodajSuseda(graf.ListaCvorova[c2], tezina);
-                            graf.ListaGrana.Add(new Grana(graf.ListaCvorova[c1], graf.ListaCvorova[c2], tezina));
-                            dodato++;
-
-                        }
-                    }
+                    cnt++;
                 }
 
                 return graf;
@@ -114,7 +61,7 @@ namespace BoruvkinAlgorithm
 
         Graf GenerisiDasyNasumicniGraf(int n, int k)
         {
-            int brojGrana = (n - 1) + (k * n);
+            int brojGrana = k * n;
             Graf graf = new Graf(n, brojGrana);
 
             int maxGrana = n * (n - 1) / 2;
@@ -135,70 +82,20 @@ namespace BoruvkinAlgorithm
                     graf.ListaCvorova.Add(new Cvor(i));
                 }
 
-                for (int i = 0; i < n - 1; i++)
+                int cnt = 0;
+                while(cnt < brojGrana)
                 {
                     uint tezina = (uint)rnd.Next(1, 21);
-                    graf.ListaCvorova[i].DodajSuseda(graf.ListaCvorova[i + 1], tezina);
-                    graf.ListaGrana.Add(new Grana(graf.ListaCvorova[i], graf.ListaCvorova[i + 1], tezina));
-                    postojeceGrane.Add((i, i + 1));
-                }
+                    Cvor c1 = graf.ListaCvorova[rnd.Next(0, n)];
+                    Cvor c2 = graf.ListaCvorova[rnd.Next(0, n)];
+                    if (c1.Vrednost == c2.Vrednost)
+                        continue;
 
-                int potrebnoGrana = k * n;
-                int dodato = 0;
-
-                if (potrebnoGrana > maxGrana / 2)
-                {
-                    List<(int, int)> sveGrane = new List<(int, int)>(maxGrana);
-
-                    for (int i = 0; i < n; i++)
-                    {
-                        for (int j = i + 1; j < n; j++)
-                        {
-                            if (!postojeceGrane.Contains((i, j)))
-                            {
-                                sveGrane.Add((i, j));
-                            }
-                        }
-                    }
-
-                    int granica = Math.Min(potrebnoGrana, sveGrane.Count);
-                    for (int i = 0; i < granica; i++)
-                    {
-                        int j = rnd.Next(i, sveGrane.Count);
-                        var temp = sveGrane[i];
-                        sveGrane[i] = sveGrane[j];
-                        sveGrane[j] = temp;
-
-                        var (c1Ind, c2Ind) = sveGrane[i];
-                        uint tezina = (uint)rnd.Next(1, 21);
-
-                        graf.ListaCvorova[c1Ind].DodajSuseda(graf.ListaCvorova[c2Ind], tezina);
-                        graf.ListaGrana.Add(new Grana(graf.ListaCvorova[c1Ind], graf.ListaCvorova[c2Ind], tezina));
-                        dodato++;
-                    }
-                }
-                else
-                {
-                    // Za manji broj grana, random sampling
-                    while (dodato < potrebnoGrana)
-                    {
-                        int c1 = rnd.Next(0, n);
-                        int c2 = rnd.Next(0, n);
-
-                        if (c1 == c2)
-                            continue;
-
-                        int min = Math.Min(c1, c2);
-                        int max = Math.Max(c1, c2);
-
-                        if (postojeceGrane.Add((min, max)))
-                        {
-                            uint tezina = (uint)rnd.Next(1, 21);
-                            graf.ListaCvorova[c1].DodajSuseda(graf.ListaCvorova[c2], tezina);
-                            graf.ListaGrana.Add(new Grana(graf.ListaCvorova[c1], graf.ListaCvorova[c2], tezina));
-                            dodato++;
-                        }
-                    }
+                    c1.DodajSuseda(c2, tezina);
+                    c2.DodajSuseda(c1, tezina);
+                    graf.ListaGrana.Add(new Grana(c1, c2, tezina));
+                    postojeceGrane.Add((graf.ListaCvorova.FindIndex(c => c.Vrednost == c1.Vrednost), graf.ListaCvorova.FindIndex(c => c.Vrednost == c2.Vrednost)));
+                    cnt++;
                 }
 
                 return graf;
